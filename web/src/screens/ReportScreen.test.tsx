@@ -10,18 +10,37 @@ import { useSessionStore } from '../state/session';
 
 const scenario = scenarios[0]!;
 
-/** Пройти кампанию, беря ход князя там, где он известен. */
+/**
+ * Пройти кампанию так, как прошёл бы её князь: из всех дорог берём ту, где
+ * ходов, известных источникам, больше всего.
+ *
+ * Раньше здесь брался первый «ход князя» без проверки доступности — и обход
+ * упирался в закрытую дверь, когда прошлое игрока её запирало. Перебор мал,
+ * зато маршрут не вписан руками и не устареет от первой правки контента.
+ */
 function walkAsPrince(): Session {
-  let session = startSession(scenario);
-  let guard = 0;
-  while (session.status === 'active' && guard < 60) {
-    guard += 1;
-    const event = getCurrentEvent(session, scenario)!;
-    const choice = event.choices.find((c) => c.canonical)
-      ?? event.choices.find((c) => canShowChoice(session, c))!;
-    session = applyChoice(session, scenario, choice.id).session;
-  }
-  return session;
+  let best = startSession(scenario);
+  let bestHits = -1;
+
+  const step = (s: Session, hits: number, depth: number) => {
+    const event = getCurrentEvent(s, scenario);
+    if (!event) {
+      if (hits > bestHits) {
+        bestHits = hits;
+        best = s;
+      }
+      return;
+    }
+    if (depth > 40) throw new Error('слишком длинный путь — похоже на цикл');
+
+    for (const c of event.choices.filter((ch) => canShowChoice(s, ch))) {
+      const r = applyChoice(s, scenario, c.id);
+      step(r.session, hits + (c.canonical ? 1 : 0), depth + 1);
+    }
+  };
+
+  step(startSession(scenario), 0, 0);
+  return best;
 }
 
 function show(session: Session) {

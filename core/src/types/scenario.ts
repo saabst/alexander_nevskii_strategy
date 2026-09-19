@@ -78,10 +78,10 @@ export interface Advisor {
 
 /** Условие показа/срабатывания. */
 export type Condition =
-  | { type: 'resource_min'; key: ResourceKey; value: number }
-  | { type: 'resource_max'; key: ResourceKey; value: number }
-  | { type: 'flag_true'; key: string }
-  | { type: 'flag_false'; key: string };
+  | { type: 'resource_min'; key: ResourceKey; value: number; note?: string }
+  | { type: 'resource_max'; key: ResourceKey; value: number; note?: string }
+  | { type: 'flag_true'; key: string; note?: string }
+  | { type: 'flag_false'; key: string; note?: string };
 
 /** Изменение состояния. */
 export type Effect =

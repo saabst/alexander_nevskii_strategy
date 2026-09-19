@@ -186,7 +186,21 @@ export interface Ending {
   /** Первое подходящее правило выигрывает; правила заданы от частного к общему. */
 }
 
-export const ENDINGS: Array<{ id: string; title: string; text: string; when: (r: Resources, s: Session) => boolean }> = [
+/**
+ * Правила финала. Правило само объявляет, какие пометки из прошлого ему нужны
+ * (`requires`), — иначе прочитать эту зависимость из кода нельзя, и проверка,
+ * которая следит за судьбой каждой пометки, слепнет.
+ */
+export interface EndingRule {
+  id: string;
+  title: string;
+  text: string;
+  /** Пометки, без которых правило не срабатывает. */
+  requires?: string[];
+  when: (r: Resources, s: Session) => boolean;
+}
+
+export const ENDINGS: EndingRule[] = [
   {
     id: 'nevsky',
     title: 'Нева за нами, и это знают все',
@@ -225,6 +239,29 @@ export const ENDINGS: Array<{ id: string; title: string; text: string; when: (r:
     when: (r) => r.easternThreat >= 70,
   },
   {
+    // Две последние пометки ставятся на выходе из Ливонии, и читать их больше
+    // негде — только здесь. Без этих правил последнее решение игрока не значит
+    // ровным счётом ничего: пометка ставилась и пропадала.
+    id: 'diplomacy',
+    title: 'Дело длинное, и оно только началось',
+    text:
+      'Вы выбрали не бой, а работу: грамоты, договоры, размен пленными, письма в Ригу ' +
+      'и в Смоленск. Так добывают не победу, а мир, и в летопись такой мир попадает ' +
+      'одной скупой строкой. Запад отступит не сразу — но погосты у Невы останутся целыми.',
+    requires: ['diplomacyPath'],
+    when: () => true,
+  },
+  {
+    id: 'war',
+    title: 'Впереди новый поход',
+    text:
+      'Вы не стали договариваться: дружина уже считает дни до весны, а Псков и Изборск ' +
+      'стоят в списке первыми. Готовиться вы умеете — вопрос только в том, хватит ли ' +
+      'серебра и людей, когда придёт время идти.',
+    requires: ['warPath'],
+    when: () => true,
+  },
+  {
     id: 'default',
     title: 'Кампания окончена',
     text:
@@ -239,7 +276,10 @@ export function calculateOutcome(
   scenario: Scenario,
   initial: Resources,
 ): Outcome {
-  const ending = ENDINGS.find((e) => e.when(session.resources, session))!;
+  const ending = ENDINGS.find(
+    (e) => (e.requires ?? []).every((k) => session.flags[k] === true)
+      && e.when(session.resources, session),
+  )!;
   const score = scoreOf(session.resources);
   const historicityScore = session.canonicalTotal === 0
     ? 0

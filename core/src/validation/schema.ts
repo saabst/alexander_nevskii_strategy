@@ -37,10 +37,10 @@ export const advisor = z.object({
 });
 
 export const condition = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('resource_min'), key: resourceKey, value: z.number() }),
-  z.object({ type: z.literal('resource_max'), key: resourceKey, value: z.number() }),
-  z.object({ type: z.literal('flag_true'), key: z.string(), value: z.never().optional() }),
-  z.object({ type: z.literal('flag_false'), key: z.string(), value: z.never().optional() }),
+  z.object({ type: z.literal('resource_min'), key: resourceKey, value: z.number(), note: z.string().optional() }),
+  z.object({ type: z.literal('resource_max'), key: resourceKey, value: z.number(), note: z.string().optional() }),
+  z.object({ type: z.literal('flag_true'), key: z.string(), value: z.never().optional(), note: z.string().optional() }),
+  z.object({ type: z.literal('flag_false'), key: z.string(), value: z.never().optional(), note: z.string().optional() }),
 ]);
 
 export const effect = z.discriminatedUnion('type', [

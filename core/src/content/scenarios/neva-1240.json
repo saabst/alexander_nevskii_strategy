@@ -579,7 +579,47 @@
             }
           ],
           "nextEventId": "neva-vostok",
-          "outcomeText": "Двадцать вёрст на руках. Люди устали, но увидели: князь шёл рядом и тянул вместе с ними."
+          "outcomeText": "Двадцать вёрст на руках. Люди устали, но увидели: князь шёл рядом и тянул вместе с ними.",
+          "conditions": [
+            {
+              "type": "flag_true",
+              "key": "wentByRiver",
+              "note": "нужны суда — вы шли берегом"
+            }
+          ]
+        },
+        {
+          "id": "landrest",
+          "title": "Дать роздых коням у Волхова",
+          "description": "Дорога долгая, а кони — половина силы. День отдыха стоит времени.",
+          "canonical": false,
+          "certainty": "recon",
+          "effects": [
+            {
+              "type": "resource",
+              "key": "army",
+              "value": 3
+            },
+            {
+              "type": "resource",
+              "key": "stability",
+              "value": 1
+            },
+            {
+              "type": "resource",
+              "key": "treasury",
+              "value": -2
+            }
+          ],
+          "nextEventId": "neva-vostok",
+          "outcomeText": "Полдня ушло на роздых, зато кони в силе и пешие не отстали. Дальше пошли ровнее и к Неве подошли все вместе.",
+          "conditions": [
+            {
+              "type": "flag_true",
+              "key": "wentByLand",
+              "note": "этот ход для тех, кто идёт берегом — вы идёте на судах"
+            }
+          ]
         }
       ],
       "illustration": {
@@ -644,7 +684,7 @@
             {
               "type": "resource",
               "key": "easternThreat",
-              "value": 8
+              "value": 18
             },
             {
               "type": "resource",
@@ -759,7 +799,14 @@
             }
           ],
           "nextEventId": "neva-bitva",
-          "outcomeText": "Дружина пошла в темноте и вышла к стану прежде, чем их заметили."
+          "outcomeText": "Дружина пошла в темноте и вышла к стану прежде, чем их заметили.",
+          "conditions": [
+            {
+              "type": "flag_false",
+              "key": "volkhovDelay",
+              "note": "вы задержались у Волхова: внезапности не осталось"
+            }
+          ]
         },
         {
           "id": "waitmorning",
@@ -782,7 +829,47 @@
             }
           ],
           "nextEventId": "neva-bitva",
-          "outcomeText": "Ночь прошла в готовности. Утром их ждали уже не спящими."
+          "outcomeText": "Ночь прошла в готовности. Утром их ждали уже не спящими.",
+          "conditions": [
+            {
+              "type": "flag_false",
+              "key": "hardRow",
+              "note": "люди вымотаны верёвками — до утра не дотянуть"
+            }
+          ]
+        },
+        {
+          "id": "scoutpath",
+          "title": "Пройти разведанной дорогой, где их не ждут",
+          "description": "Сторожа нашла подход. Удар выйдет дешевле, чем в лоб.",
+          "canonical": false,
+          "certainty": "recon",
+          "effects": [
+            {
+              "type": "resource",
+              "key": "army",
+              "value": -3
+            },
+            {
+              "type": "resource",
+              "key": "westernThreat",
+              "value": -13
+            },
+            {
+              "type": "resource",
+              "key": "authority",
+              "value": 2
+            }
+          ],
+          "nextEventId": "neva-bitva",
+          "outcomeText": "Сторожа провела по броду, которого не знал никто из чужих. Их дозорные стояли не там, где их ждали, и крик поднялся поздно.",
+          "conditions": [
+            {
+              "type": "flag_true",
+              "key": "scoutsSent",
+              "note": "сторожу вы не высылали — дороги не знает никто"
+            }
+          ]
         }
       ],
       "illustration": {
@@ -886,7 +973,47 @@
             }
           ],
           "nextEventId": "neva-posle",
-          "outcomeText": "Бой выиграли с меньшими потерями — и с меньшим числом песен."
+          "outcomeText": "Бой выиграли с меньшими потерями — и с меньшим числом песен.",
+          "conditions": [
+            {
+              "type": "flag_false",
+              "key": "hitFirst",
+              "note": "вы уже ворвались в стан — отсидеться не выйдет"
+            }
+          ]
+        },
+        {
+          "id": "izhoraflank",
+          "title": "Обойти стан с ижорской стороны",
+          "description": "Проводники знают тропы: удар придётся туда, где не ждут.",
+          "canonical": false,
+          "certainty": "recon",
+          "effects": [
+            {
+              "type": "resource",
+              "key": "army",
+              "value": -2
+            },
+            {
+              "type": "resource",
+              "key": "authority",
+              "value": 5
+            },
+            {
+              "type": "resource",
+              "key": "stability",
+              "value": 4
+            }
+          ],
+          "nextEventId": "neva-posle",
+          "outcomeText": "Проводники вывели к стану с той стороны, где не было ни рва, ни стражи. Ижоряне шли первыми — и после никто не смел сказать, что они остались в стороне.",
+          "conditions": [
+            {
+              "type": "flag_true",
+              "key": "izhoraGuides",
+              "note": "ижорских проводников у вас нет"
+            }
+          ]
         }
       ],
       "illustration": {
@@ -972,7 +1099,14 @@
             }
           ],
           "nextEventId": "neva-vozvrashchenie",
-          "outcomeText": "Ижоряне остались с тобой. Их будут звать в разведку ещё десятки лет."
+          "outcomeText": "Ижоряне остались с тобой. Их будут звать в разведку ещё десятки лет.",
+          "conditions": [
+            {
+              "type": "flag_false",
+              "key": "mistrustIzhora",
+              "note": "ижоряне вам больше не верят"
+            }
+          ]
         },
         {
           "id": "loot",
@@ -1000,7 +1134,14 @@
             }
           ],
           "nextEventId": "neva-vozvrashchenie",
-          "outcomeText": "Дружина получила своё. Ижоряне ушли, не простившись."
+          "outcomeText": "Дружина получила своё. Ижоряне ушли, не простившись.",
+          "conditions": [
+            {
+              "type": "flag_false",
+              "key": "waitedMorning",
+              "note": "они успели увести добро на суда"
+            }
+          ]
         },
         {
           "id": "freeransom",
@@ -1100,7 +1241,19 @@
             }
           ],
           "nextEventId": "neva-koporye",
-          "outcomeText": "Город выдохнул и дал людей на зиму."
+          "outcomeText": "Город выдохнул и дал людей на зиму.",
+          "conditions": [
+            {
+              "type": "flag_false",
+              "key": "looted",
+              "note": "город знает про разорённый погост"
+            },
+            {
+              "type": "flag_false",
+              "key": "keptHead",
+              "note": "дружина не видела вас в бою"
+            }
+          ]
         },
         {
           "id": "demandmoney",
@@ -1124,6 +1277,39 @@
           ],
           "nextEventId": "neva-koporye",
           "outcomeText": "Серебро собрали, но на вече кто-то сказал вслух: «Ещё один такой поход — и он нам не нужен»."
+        },
+        {
+          "id": "izhoraelders",
+          "title": "Ввести ижорских старейшин в Новгород как свидетелей",
+          "description": "Пусть скажут при всех, где стоял враг и кто встретил его первым.",
+          "canonical": false,
+          "certainty": "recon",
+          "effects": [
+            {
+              "type": "resource",
+              "key": "authority",
+              "value": 6
+            },
+            {
+              "type": "resource",
+              "key": "stability",
+              "value": 4
+            },
+            {
+              "type": "resource",
+              "key": "treasury",
+              "value": -3
+            }
+          ],
+          "nextEventId": "neva-koporye",
+          "outcomeText": "Старейшины вошли в город следом за князем и говорили на вече. Их слушали не потому, что они складно говорили, а потому, что они там были.",
+          "conditions": [
+            {
+              "type": "flag_true",
+              "key": "izhoraLoyal",
+              "note": "погост вы не одарили — свидетели не придут"
+            }
+          ]
         }
       ]
     },

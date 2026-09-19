@@ -3,7 +3,7 @@ import rawScenario from '../content/scenarios/neva-1240.json';
 import type { Scenario, Resources, Session } from '../types/scenario';
 import {
   applyChoice, applyEffects, calculateOutcome, canShowChoice, checkCondition,
-  clampResource, getCurrentEvent, replay, scoreOf, startSession, RESOURCE_MAX, RESOURCE_MIN,
+  clampResource, ENDINGS, getCurrentEvent, replay, scoreOf, startSession, RESOURCE_MAX, RESOURCE_MIN,
 } from './index';
 
 const scenario = rawScenario as unknown as Scenario;
@@ -112,6 +112,31 @@ describe('итоговый отчёт', () => {
     'marchnow', 'byriver', 'towline', 'ignoreeast', 'attacknow', 'infirstrank',
     'mercy', 'honor', 'takekoporye', 'treaty', 'writeplain',
   ];
+  const CANON_KEY = canonicalPath.join('>');
+
+  /**
+   * Все прохождения целиком: финал, счёт состояния земель и историчность.
+   * Перебор идёт около секунды, а нужен нескольким проверкам — считаем один
+   * раз, и каждая ищет по нему своё.
+   */
+  const RUNS: Array<{ path: string[]; ending: string; score: number; historicity: number }> = (() => {
+    const out: Array<{ path: string[]; ending: string; score: number; historicity: number }> = [];
+    const step = (s: Session, path: string[]) => {
+      const ev = scenario.events.find((e) => e.id === s.currentEventId)!;
+      for (const c of ev.choices.filter((ch) => canShowChoice(s, ch))) {
+        const r = applyChoice(s, scenario, c.id);
+        const next = [...path, c.id];
+        if (r.session.status === 'finished') {
+          const o = calculateOutcome(r.session, scenario, scenario.resources);
+          out.push({ path: next, ending: o.endingId ?? 'default', score: o.score, historicity: o.historicityScore });
+        } else {
+          step(r.session, next);
+        }
+      }
+    };
+    step(startSession(scenario), []);
+    return out;
+  })();
 
   it('канонический путь доходит до финала', () => {
     const s = replay(scenario, canonicalPath);
@@ -134,21 +159,37 @@ describe('итоговый отчёт', () => {
   it('путь по летописи ведёт к лучшему финалу — но он не единственный', () => {
     const canon = calculateOutcome(replay(scenario, canonicalPath), scenario, scenario.resources);
     expect(canon.endingId).toBe('nevsky');
-    // и при этом существует неканонический путь с тем же финалом: игра не тест на угадывание
-    const alt = calculateOutcome(
-      replay(scenario, ['sendscouts', 'trust', 'byland', 'waitwater', 'ignoreeast', 'attacknow',
-        'commandhill', 'freeransom', 'honor', 'takekoporye', 'treaty', 'writeplain']),
-      scenario, scenario.resources);
-    expect(alt.endingId).toBe('nevsky');
+    // Путь ищем перебором, а не вписываем руками. Вписанный устаревает при
+    // первой же правке контента — и его правят «чтобы прошло», вместо того
+    // чтобы проверить само обещание: к лучшему финалу ведёт не одна дорога.
+    const alt = RUNS.find((r) => r.ending === 'nevsky' && r.path.join('>') !== CANON_KEY);
+    expect(alt, 'к лучшему финалу ведёт только летописный путь').toBeTruthy();
   });
 
   it('историчность считается отдельно от успеха', () => {
-    const good = calculateOutcome(replay(scenario, canonicalPath), scenario, scenario.resources);
-    const bad = calculateOutcome(
-      replay(scenario, ['gatherveche', 'notrade', 'byland', 'waitwater', 'payeast', 'waitmorning',
-        'commandhill', 'loot', 'demandmoney', 'postpone', 'preparepskov', 'writeloud']),
-      scenario, scenario.resources);
-    expect(good.historicityScore).toBeGreaterThan(bad.historicityScore);
+    const canon = calculateOutcome(replay(scenario, canonicalPath), scenario, scenario.resources);
+    expect(canon.historicityScore).toBe(100);
+    // Меры независимы, и это проверяется, а не подразумевается: лучшее
+    // состояние земель достигается НЕ летописным путём. Иначе «поступать как
+    // князь» и «получить сильные земли» слились бы в одно решение, и игра
+    // стала бы тестом на один правильный ответ.
+    const best = RUNS.reduce((a, b) => (b.score > a.score ? b : a));
+    expect(best.historicity).toBeLessThan(canon.historicityScore);
+    expect(best.path.join('>')).not.toBe(CANON_KEY);
+  });
+
+  it('каждый эпилог достижим хотя бы одной дорогой', () => {
+    // Эпилог «Орда» был написан автором и недостижим: восточная угроза не
+    // могла дойти до порога, и целый финал лежал мёртвым текстом, который
+    // никто и никогда не увидел бы.
+    // «default» — не рассказ, а сетка на случай, если ни одно правило не
+    // подошло. Она может и не сработать ни разу: это не потерянный текст,
+    // а страховка от падения. Требуем достижимости от всех остальных.
+    const NETS = ['default'];
+    const reached = new Set(RUNS.map((r) => r.ending));
+    const missing = ENDINGS.map((e) => e.id)
+      .filter((id) => !NETS.includes(id) && !reached.has(id));
+    expect(missing, `эпилоги, которых никто не увидит: ${missing.join(', ')}`).toEqual([]);
   });
 
   it('отчёт называет места, где мы честно не знаем', () => {

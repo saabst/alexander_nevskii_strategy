@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import rawScenario from './scenarios/neva-1240.json';
 import { RESOURCE_META, type Scenario, type Session } from '../types/scenario';
 import { validateScenario } from '../validation/schema';
-import { applyChoice, canShowChoice, startSession } from '../engine';
+import { applyChoice, canShowChoice, ENDINGS, startSession } from '../engine';
 
 const scenario = rawScenario as unknown as Scenario;
 
@@ -135,5 +135,72 @@ describe('граф сценария целиком', () => {
     const available = ev.choices.filter((c) => canShowChoice(weak, c));
     expect(available.length).toBe(1);
     expect(available[0]!.id).toBe('postpone');
+  });
+});
+
+describe('прошлое влияет на настоящее', () => {
+  const choices = scenario.events.flatMap((e) => e.choices);
+
+  /** Пометки, которые сценарий где-то ставит. */
+  function writtenFlags(): Set<string> {
+    const out = new Set<string>();
+    for (const c of choices) {
+      for (const e of c.effects) if (e.type === 'flag') out.add(e.key);
+    }
+    return out;
+  }
+
+  /**
+   * Пометки, которые сценарий где-то читает: условия на дверях плюс правила
+   * финала. Эпилог читает прошлое наравне с событиями — «вы выбрали не бой,
+   * а работу» — и без этого страж считал бы такие пометки брошенными.
+   */
+  function readFlags(): Set<string> {
+    const out = new Set<string>();
+    for (const c of choices) {
+      for (const k of c.conditions ?? []) {
+        if (k.type === 'flag_true' || k.type === 'flag_false') out.add(k.key);
+      }
+    }
+    for (const e of ENDINGS) for (const k of e.requires ?? []) out.add(k);
+    return out;
+  }
+
+  it('каждая пометка из прошлого кем-то читается', () => {
+    // Так уже было: четырнадцать пометок ставились — «послал сторожу»,
+    // «обошёлся с ижорой грубо», «взял серебро в долг» — и ни одна не
+    // управляла ни одной дверью. Игра превращалась в коридор, где прошлое
+    // ничего не решает, а игрок чувствует не выбор, а перелистывание.
+    const silent = [...writtenFlags()].filter((k) => !readFlags().has(k));
+    expect(silent, `пометки ставятся, но ни на что не влияют: ${silent.join(', ')}`).toEqual([]);
+  });
+
+  it('условия ссылаются только на те пометки, которые кто-то ставит', () => {
+    // Опечатка в имени пометки запирает дверь навсегда: условие не сбудется
+    // никогда, и игрок увидит «недоступно» там, где должен был пройти.
+    const written = writtenFlags();
+    const unknown = [...readFlags()].filter((k) => !written.has(k));
+    expect(unknown, `условия ждут пометок, которых никто не ставит: ${unknown.join(', ')}`).toEqual([]);
+  });
+
+  it('решений, зависящих от прошлого, не меньше десяти', () => {
+    // Не ради числа: если условий снова станет одно на весь сценарий,
+    // выбор опять выродится в перелистывание.
+    const conditional = choices.filter((c) => c.conditions?.length);
+    expect(conditional.length).toBeGreaterThanOrEqual(10);
+  });
+
+  it('у каждой закрытой двери есть объяснение, а не отговорка', () => {
+    const vague: string[] = [];
+    for (const e of scenario.events) {
+      for (const c of e.choices) {
+        for (const k of c.conditions ?? []) {
+          if ((k.type === 'flag_true' || k.type === 'flag_false') && !k.note) {
+            vague.push(`${e.id}/${c.id}: ${k.key}`);
+          }
+        }
+      }
+    }
+    expect(vague, `двери без объяснения: ${vague.join(', ')}`).toEqual([]);
   });
 });

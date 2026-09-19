@@ -23,15 +23,19 @@ export function blockedReason(session: Session, choice: Choice): string | null {
   if (!choice.conditions?.length) return null;
   for (const c of choice.conditions) {
     if (checkCondition(session, c)) continue;
+    // Своё объяснение важнее общего: «нужны суда — вы шли берегом» говорит,
+    // какую именно дверь игрок закрыл сам. «Раньше не сложилось» не говорит
+    // ничего и читается как отговорка движка.
+    if (c.note) return c.note;
     switch (c.type) {
       case 'resource_min':
         return `нужно ${RESOURCE_META[c.key].label.toLowerCase()} не меньше ${c.value}, а у вас ${session.resources[c.key]}`;
       case 'resource_max':
         return `${RESOURCE_META[c.key].label} выше ${c.value} — так нельзя`;
       case 'flag_true':
-        return 'этот ход недоступен: раньше не сложилось';
+        return 'нужно было поступить иначе раньше';
       case 'flag_false':
-        return 'этот ход больше недоступен';
+        return 'прошлые решения закрыли этот ход';
     }
   }
   return null;
