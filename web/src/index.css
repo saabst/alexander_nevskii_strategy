@@ -1,0 +1,297 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════
+   ЯЗЫК «БЕРЕСТА»
+   Основа взята из одобренной владельцем пробы «береста». Письмо процарапано в поверхность, а не напечатано
+   поверх неё: отсюда обводка по контуру и подсветка снизу.
+
+   Все цвета проверены численно на норму читаемости (WCAG AA):
+   текст 4,5:1, границы интерактивных элементов 3:1. Проверка
+   живёт тестом — theme.contrast.test.ts. Меняете цвет здесь —
+   прогоните тесты, иначе читаемость поедет молча.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Письмо. Neucha, OFL. Сабсет под кириллицу — 17 КБ.
+   ВНИМАНИЕ: в Neucha нет знака минус U+2212. Для отрицательных
+   приростов используем U+2013 (тире), иначе знак подменится чужим
+   шрифтом и вылезет из строки. */
+@font-face {
+  font-family: "Neucha";
+  src: url("./fonts/neucha-cyr.woff2") format("woff2");
+  font-display: swap;
+}
+
+@theme {
+  /* ── Лист и его оттенки ── */
+  --color-paper:      #e7dcc2;   /* береста */
+  --color-paper-2:    #ded1b2;   /* подложка, тень волокна */
+  --color-paper-3:    #cfc0a0;   /* наведение, глубже в кору */
+  --color-outside:    #c8bda4;   /* за листом */
+
+  /* ── Процарапанная линия ── */
+  --color-ink:        #4a3826;   /* основной текст: 6,21:1 по худшему фону */
+  --color-ink-soft:   #594e40;   /* второстепенный: 4,52:1 по худшему фону */
+  --color-line:       #a8956e;   /* разделители, декоративные: норма 3:1 не требуется */
+  --color-line-strong:#736951;   /* границы кнопок и полей: 3,02:1 по худшему фону */
+
+  /* ── Пометки ── */
+  --color-accent:     #873720;   /* киноварь: 4,50:1 по худшему фону */
+  --color-accent-2:   #624375;   /* фокус: виден на любом из фонов */
+  --color-gold:       #654b1c;
+
+  /* ── Статусы знания. Считаны по ХУДШЕМУ фону из трёх,
+     потому что бейджи ходят и по листу, и по подложке, и по ткани ── */
+  --color-fact:       #3c5638;   /* факт:      4,53:1 */
+  --color-recon:      #654b1c;   /* разведка:  4,54:1 */
+  --color-legend:     #624375;   /* предание:  4,54:1 */
+  --color-guess:      #8a3425;   /* догадка:   4,50:1 */
+
+  /* ── Гарнитуры. Всё письмо — рукописное; serif/sans оставлены
+     как синонимы, чтобы компоненты не пришлось трогать ради шрифта ── */
+  --font-hand:  "Neucha", "Comic Sans MS", "Segoe Print", cursive;
+  --font-serif: var(--font-hand);
+  --font-sans:  var(--font-hand);
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--color-outside);
+  color: var(--color-ink);
+  font-family: var(--font-hand);
+  font-size: 19px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  /* Толщина письма. У Neucha только одно начертание — жирного нет
+     физически, поэтому плотность добирается обводкой по контуру.
+     Стоит на всём тексте сразу: это язык продукта, а не украшение
+     отдельного блока. Раньше было классом .carved, и его забывали
+     навесить — текст выходил худым. */
+  -webkit-text-stroke: .5px currentColor;
+}
+
+/* ─── Процарапанное письмо ──────────────────────────────────────────
+   Жёлобок: светлая подсветка снизу и тёмная сверху — буква читается
+   как выдавленная в коре, а не напечатанная поверх. Ставится там,
+   где текст лежит на листе; на залитых кнопках подсветка лишняя. */
+.carved {
+  text-shadow: 0 1px 0 #ffffff3d, 0 -1px 0 #00000014;
+}
+
+/* На мелком кегле обводка заплывает и буквы слипаются.
+   text-xs (12 px) — предел, ниже обводка выключается. */
+.text-xs {
+  -webkit-text-stroke: 0;
+}
+
+/* ═══ ЛИСТ БЕРЁСТЫ ═══════════════════════════════════════════════════
+   Весь продукт — один лист коры, лежащий на тёмной подложке. Это не
+   украшение: без материала язык рассыпается в «бежевый сайт с
+   рукописным шрифтом», что и было видно на первых снимках.
+
+   Три слоя фона: две почти горизонтальные полосы волокон (наклон
+   178.4° и 181.2° — они чуть расходятся, поэтому и читаются как
+   волокна, а не как линовка) и вертикальный переход тона.
+
+   Кромка рваная через clip-path. Смещения по бокам заданы в px, а не
+   в процентах: лист длинный, и проценты растянули бы зазубрины до
+   безобразия. По вертикали проценты — там зазубрины должны
+   распределиться по всей длине равномерно.
+
+   Тень не задаём: clip-path обрезает и её, так что тень только
+   выглядела бы забытой строкой в коде. Глубину даёт подложка. */
+.bark-sheet {
+  position: relative;
+  background:
+    repeating-linear-gradient(178.4deg,
+      #00000008 0 2px, transparent 2px 7px, #ffffff30 7px 8px, transparent 8px 19px),
+    repeating-linear-gradient(181.2deg,
+      #00000005 0 1px, transparent 1px 11px),
+    linear-gradient(180deg, var(--color-paper), var(--color-paper-2) 55%, var(--color-paper-3));
+  clip-path: polygon(
+    /* верхняя кромка */
+    0 6px, 5% 0, 12% 8px, 21% 1px, 33% 7px, 44% 0, 57% 8px, 68% 1px, 79% 7px, 90% 0, 100% 6px,
+    /* правая кромка */
+    calc(100% - 4px) 12%, calc(100% - 8px) 24%, calc(100% - 2px) 37%, calc(100% - 7px) 49%,
+    calc(100% - 1px) 61%, calc(100% - 6px) 73%, calc(100% - 3px) 86%, calc(100% - 5px) 96%,
+    /* нижняя кромка */
+    100% calc(100% - 5px), 88% 100%, 76% calc(100% - 7px), 63% 100%, 51% calc(100% - 6px),
+    39% 100%, 27% calc(100% - 7px), 15% 100%, 6% calc(100% - 5px), 0 calc(100% - 8px),
+    /* левая кромка */
+    5px 88%, 1px 76%, 7px 64%, 2px 52%, 8px 40%, 1px 28%, 6px 16%
+  );
+}
+
+/* ─── Фактура коры поверх листа. Рисуется кодом: ноль байт картинок ───
+   absolute, а не fixed: шум обязан лежать на коре и обрезаться вместе
+   с ней, иначе он вылезет за рваную кромку на подложку. */
+.grain-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: .5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.5 .9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.3'/%3E%3C/svg%3E");
+}
+
+/* ═══ БЕРЕСТЯНАЯ ФОРМА ═══════════════════════════════════════════════
+   Углы неровные намеренно: ровный скруглённый прямоугольник — это язык
+   веб-сервиса, а не коры. Каждый угол задаётся вручную и слегка
+   отличается от соседей, плюс микро-наклон: штампованности не должно
+   быть видно. Цвета границ — не color-mix, а заранее посчитанные
+   значения: их видно в отладке и они не зависят от поддержки браузера. */
+
+.bark-panel {
+  border: 2px solid #4a382619;
+  border-radius: 16px 6px 18px 7px;
+  background: var(--color-paper-2);
+}
+.bark-panel-alt {
+  border-radius: 7px 18px 6px 16px;
+}
+
+/* Зарубка — вариант решения. Ромб слева читается как отметка ножом,
+   а не как радиокнопка: отмечать можно несколько, а это не так. */
+.bark-choice {
+  position: relative;
+  border: 2px solid #4a382619;
+  border-radius: 16px 6px 18px 7px;
+  background: var(--color-paper-2);
+  padding: 1rem 1.15rem 1rem 3rem;
+  transform: rotate(.18deg);
+  transition: background .18s, border-color .18s;
+}
+.bark-choice:nth-of-type(even) {
+  transform: rotate(-.22deg);
+}
+.bark-choice:hover:not(:disabled) {
+  background: #fffdf6cc;
+  border-color: #4a38264d;
+}
+.bark-choice:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+}
+.bark-choice::before {
+  content: "";
+  position: absolute;
+  left: 1.05rem;
+  top: 1.45rem;
+  width: 9px;
+  height: 9px;
+  background: var(--color-ink-soft);
+  transform: rotate(45deg);
+}
+.bark-choice:disabled::before {
+  background: transparent;
+  border: 1.5px solid var(--color-ink-soft);
+}
+
+/* Пометка статуса: не пилюля, а процарапанная плашка */
+.bark-mark {
+  display: inline-block;
+  border: 1.5px solid currentColor;
+  border-radius: 12px 4px 11px 5px;
+  padding: .08rem .45rem;
+  transform: rotate(-.7deg);
+  letter-spacing: .04em;
+}
+
+/* Насечки: шкала процарапана, а не залита краской.
+   vector-effect держит толщину линии постоянной при растяжении —
+   без него штрихи при горизонтальном масштабе расплющиваются. */
+.bark-scale {
+  display: block;
+  width: 100%;
+  height: 13px;
+}
+.bark-scale line {
+  vector-effect: non-scaling-stroke;
+}
+.bark-scale .rail {
+  stroke: #4a382638;
+  stroke-width: 2;
+}
+.bark-scale .fill {
+  stroke: currentColor;
+  stroke-width: 4;
+  stroke-dasharray: 3 5;
+  stroke-linecap: round;
+}
+.bark-scale .pin {
+  stroke: var(--color-ink);
+  stroke-width: 2.5;
+}
+
+/* Отбивка в рукописи — прерывистая линия */
+.bark-rule {
+  border-top: 2px dashed #4a38262e;
+}
+
+/* Кнопка-плашка: тот же неровный угол, что у панелей, но мельче.
+
+   ВНИМАНИЕ о слоях. Эти правила лежат ВНЕ @layer, поэтому в каскаде они
+   сильнее утилит Tailwind. Значит собирать кнопку из bark-btn + bg-ink
+   нельзя — фон перебьётся. Для залитой кнопки есть отдельный модификатор
+   bark-btn-primary, и это не избыточность, а необходимость. */
+.bark-btn {
+  border: 2px solid #4a38261f;
+  border-radius: 11px 5px 12px 4px;
+  background: transparent;
+  transition: background .18s, border-color .18s;
+}
+.bark-btn:hover:not(:disabled) {
+  background: #fffdf699;
+  border-color: #4a38264d;
+}
+.bark-btn-primary {
+  border: 2px solid var(--color-ink);
+  border-radius: 11px 5px 12px 4px;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  transition: background .18s;
+}
+.bark-btn-primary:hover:not(:disabled) {
+  background: #3a2b1d;
+}
+
+/* Чип последствия решения («войско −5») — не плашка, а помета на поле */
+.bark-note {
+  border-bottom: 2px dashed #4a382636;
+  padding-bottom: 1px;
+}
+
+/* Нажимать должно быть удобно пальцем: 44 px — минимальная цель */
+button, a[role="button"], .tappable { min-height: 44px; }
+
+:focus-visible {
+  outline: 3px solid var(--color-accent-2);
+  outline-offset: 2px;
+}
+
+/* ─── Печать отчёта и сертификата ───
+   Бумага бересты на печати съедает тонер и мажется; в печать
+   уходит та же типографика, но на белом. */
+@media print {
+  .no-print { display: none !important; }
+  .grain-layer { display: none !important; }
+  /* Лист на печать идёт без кромки и волокон: зазубрины обрежутся
+     полями страницы, а фон съест тонер и будет мазаться. */
+  .bark-sheet {
+    clip-path: none;
+    background: #fff;
+    max-width: none;
+  }
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 12pt;
+    /* на печати обводка замыливает мелкий кегль */
+    -webkit-text-stroke: 0;
+  }
+  .carved { -webkit-text-stroke: 0; text-shadow: none; }
+  @page { margin: 14mm; }
+}

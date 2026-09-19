@@ -1,0 +1,18 @@
+{
+  "name": "nevsky",
+  "private": true,
+  "description": "Невский: Стратегия решений — образовательный исторический симулятор решений",
+  "workspaces": ["core", "web"],
+  "scripts": {
+    "dev": "npm run dev -w @nevsky/web",
+    "build": "npm run build -w @nevsky/web",
+    "build:offline": "npm run build:offline -w @nevsky/web",
+    "release": "npm run build:offline && node tools/make-release.mjs",
+    "preview": "npm run preview -w @nevsky/web",
+    "test": "npm run test -w @nevsky/core && npm run test -w @nevsky/web",
+    "test:core": "npm run test -w @nevsky/core",
+    "test:web": "npm run test -w @nevsky/web",
+    "validate": "npm run validate -w @nevsky/core",
+    "typecheck": "npm run typecheck -w @nevsky/core && npm run typecheck -w @nevsky/web"
+  }
+}
